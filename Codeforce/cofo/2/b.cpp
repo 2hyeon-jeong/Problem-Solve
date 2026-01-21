@@ -1,4 +1,3 @@
-
 #include <bits/stdc++.h>
 
 #define endl "\n"
@@ -12,46 +11,27 @@ typedef long long ll;
 typedef pair<int, int> pii;
 typedef pair<ll, ll> pll;
 
-void solve() {
-    int n, q; cin >> n >> q;
-    string s; cin >> s;
-    int sz = sz(s);
-    bool has_b = false;
-    for (char c : s) {
-        if (c == 'B') {
-            has_b = true;
-            break;
-        }
-    }
-    
-    while(q--) {
-        ll a; cin >> a;
-        if (!has_b) {
-            cout << a << endl;
-            continue;
-        }
-        int ans = 0;
-        int cur = 0;
-        while(a > 0) {
-            if (s[cur] == 'B') {
-                a /= 2;
-                cur++;
-                ans++;
-            }
-            else {
-                int cnt = 0;
-                while(cur + cnt < sz && s[cur + cnt] == 'A') {
-                    cnt++;
-                }
-                ans += min(a, (ll)cnt);
-                cur += min(a, (ll)cnt);
-                a -= min(a, (ll)cnt);
-            }
-            cur %= sz;
-        }
-        cout << ans << endl;
-    }
 
+void solve() {
+    int n; cin >> n;
+    int px, py, qx, qy; cin >> px >> py >> qx >> qy;
+    vector<int> a(n);
+    for (int i = 0; i < n; ++i) cin >> a[i];
+    ll max_dist = 0;
+    for (int i = 0; i < n; ++i) max_dist += a[i];
+    ll min_dist = 0;
+    int m = *max_element(all(a));
+    min_dist = m - (max_dist - m);
+    if (min_dist < 0) min_dist = 0;
+    ll dx = px - qx;
+    ll dy = py - qy;
+    double dist = sqrt(dx * dx + dy * dy);
+    if (min_dist <= dist && dist <= max_dist) {
+        cout << "Yes" << endl;
+    }
+    else {
+        cout << "No" << endl;
+    }
 }
 
 int main() {
@@ -59,7 +39,8 @@ int main() {
     cin.tie(NULL);
 
     int tc; cin >> tc;
-    while(tc--) solve();
+    while(tc--)
+        solve();
 
     return 0;
 }

@@ -1,4 +1,4 @@
-// Problem: BOJ 1014
+// Problem: BOJ 3640
 
 #include <bits/stdc++.h>
 
@@ -36,122 +36,93 @@ typedef pair<int, int> pii;
 typedef pair<ll, ll> pll;
 
 struct Edge {
-    int to, capacity, flow, rev;
+    int to, capacity, flow, cost, rev;
 };
 
 vector<vector<Edge>> adj;
 vector<int> parent_node;
 vector<int> parent_idx;
-int n, m;
+vector<int> dist;
+vector<bool> in_queue;
 
-vector<string> graph;
-
-void add_edge(int from, int to, int cap) {
-    adj[from].push_back({to, cap, 0, sz(adj[to])});
-    adj[to].push_back({from, 0, 0, sz(adj[from]) - 1});
+void add_edge(int from, int to, int cap, int cost) {
+    adj[from].push_back({to, cap, 0, cost, sz(adj[to])});
+    adj[to].push_back({from, 0, 0, -cost, sz(adj[from]) - 1});
 }
 
-int get_in(int r, int c) { return m * r + c; }
-
-int dr[] = {-1, 0, 1, -1, 0, 1};
-int dc[] = {-1, -1, -1, 1, 1, 1};
-
 int mcmf(int source, int sink) {
-    int toatal_flow = 0;
+    int total_flow = 0; int total_cost = 0;
     while(1) {
-        fill(all(parent_idx), -1);
-        fill(all(parent_node), -1);
+        fill(all(parent_node), -1); fill(all(parent_idx), -1);
+        fill(all(dist), INT_MAX); fill(all(in_queue), false);
         queue<int> q;
         q.push(source);
+        in_queue[source] = true;
+        dist[source] = 0;
         while(!q.empty()) {
             int cur = q.front(); q.pop();
+            in_queue[cur] = false;
             for (int i = 0; i < sz(adj[cur]); ++i) {
                 Edge& e = adj[cur][i];
-                if (e.capacity - e.flow > 0 && parent_node[e.to] == -1) {
-                    q.push(e.to);
+                if (e.capacity - e.flow > 0 && dist[e.to] > dist[cur] + e.cost) {
+                    dist[e.to] = dist[cur] + e.cost;
                     parent_node[e.to] = cur;
                     parent_idx[e.to] = i;
+                    if (!in_queue[e.to]) {
+                        q.push(e.to); in_queue[e.to] = true;
+                    }
                 }
             }
         }
         if (parent_node[sink] == -1) break;
-        int flow = (1<<30);
+        int flow = INT_MAX;
         for (int v = sink; v != source; v = parent_node[v]) {
             int u = parent_node[v];
             int idx = parent_idx[v];
             flow = min(flow, adj[u][idx].capacity - adj[u][idx].flow);
         }
+
         for (int v = sink; v != source; v = parent_node[v]) {
             int u = parent_node[v];
             int idx = parent_idx[v];
             int rev_idx = adj[u][idx].rev;
             adj[u][idx].flow += flow;
             adj[v][rev_idx].flow -= flow;
+            total_cost += flow * adj[u][idx].cost;
         }
-        toatal_flow += flow;
+        total_flow += flow;
     }
-    return toatal_flow;
+    return total_cost;
 }
 
 void solve() {
-    cin >> n >> m;
-    vector<string> graph(n);
-    int total_seats = 0;
-
-    for (int i = 0; i < n; ++i) {
-        cin >> graph[i];
-        for(char c : graph[i]) if(c == '.') total_seats++;
-    }
-
-    int offset = n * m;
-    int source = 2 * n * m;
-    int sink = 2 * n * m + 1;
-
-    adj.clear(); 
-    adj.resize(sink + 5);
-    parent_node.resize(sink + 5);
-    parent_idx.resize(sink + 5);
-
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < m; ++j) {
-            if (graph[i][j] == 'x') continue;
-
-            int u_in = get_in(i, j);
-            int u_out = u_in + offset;
-
-            add_edge(u_in, u_out, 1);
-
-            if (j % 2 == 0) {
-                add_edge(source, u_in, 1); 
-
-                for (int k = 0; k < 6; ++k) {
-                    int ni = i + dr[k];
-                    int nj = j + dc[k];
-
-                    if (ni < 0 || ni >= n || nj < 0 || nj >= m) continue;
-                    if (graph[ni][nj] == 'x') continue;
-
-                    int v_in = get_in(ni, nj);
-                    add_edge(u_out, v_in, 1e9); 
-                }
-            }
-            else {
-                add_edge(u_out, sink, 1);
-            }
+    int v, e;
+    while(cin >> v >> e) {
+        int source = 1; int sink = v;
+        adj.clear(); adj.resize(3 * sink + 1);
+        parent_node.resize(3 * sink + 1);
+        parent_idx.resize(3 * sink + 1);
+        dist.resize(3*sink + 1);
+        in_queue.resize(3*sink + 1);
+        // 정점 분할
+        add_edge(source, source + sink, 2, 0);
+        add_edge(sink, sink + sink, 2, 0);
+        for (int i = 2; i < sink; ++i) add_edge(i, i + sink, 1, 0);
+        while(e--) {
+            int a, b, c; cin >> a >> b >> c;
+            add_edge(a + sink, b, 1, c);
         }
+        cout << mcmf(source, sink + sink) << endl;
     }
-
-    // 정답 = 전체 자리 - 매칭된 수(컨닝 때문에 못 앉는 수)
-    cout << total_seats - mcmf(source, sink) << endl;
 }
 
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
 
-    int tc; cin >> tc;
-    while(tc--)
-        solve();
+    //int tc; cin >> tc;
+    //while(tc--)
+    solve();
 
     return 0;
 }

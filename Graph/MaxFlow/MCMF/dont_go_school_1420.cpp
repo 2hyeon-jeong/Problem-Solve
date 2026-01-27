@@ -1,4 +1,4 @@
-// Problem: BOJ 1014
+// Problem: BOJ 1420
 
 #include <bits/stdc++.h>
 
@@ -38,29 +38,26 @@ typedef pair<ll, ll> pll;
 struct Edge {
     int to, capacity, flow, rev;
 };
-
+const int MAXN = 10000;
+int n, m;
+int dr[4] = {1, 0, -1, 0};
+int dc[4] = {0, 1, 0, -1};
 vector<vector<Edge>> adj;
 vector<int> parent_node;
 vector<int> parent_idx;
-int n, m;
-
-vector<string> graph;
-
 void add_edge(int from, int to, int cap) {
     adj[from].push_back({to, cap, 0, sz(adj[to])});
     adj[to].push_back({from, 0, 0, sz(adj[from]) - 1});
 }
 
-int get_in(int r, int c) { return m * r + c; }
+int get_in(int r, int c) { return r*m + c; }
+int get_out(int r, int c) { return r*m + c + MAXN; }
 
-int dr[] = {-1, 0, 1, -1, 0, 1};
-int dc[] = {-1, -1, -1, 1, 1, 1};
-
-int mcmf(int source, int sink) {
-    int toatal_flow = 0;
+int max_flow(int source, int sink) {
+    int tot = 0;
     while(1) {
-        fill(all(parent_idx), -1);
         fill(all(parent_node), -1);
+        fill(all(parent_idx), -1);
         queue<int> q;
         q.push(source);
         while(!q.empty()) {
@@ -81,6 +78,7 @@ int mcmf(int source, int sink) {
             int idx = parent_idx[v];
             flow = min(flow, adj[u][idx].capacity - adj[u][idx].flow);
         }
+
         for (int v = sink; v != source; v = parent_node[v]) {
             int u = parent_node[v];
             int idx = parent_idx[v];
@@ -88,70 +86,52 @@ int mcmf(int source, int sink) {
             adj[u][idx].flow += flow;
             adj[v][rev_idx].flow -= flow;
         }
-        toatal_flow += flow;
+        tot += flow;
     }
-    return toatal_flow;
+    return tot;
 }
+
 
 void solve() {
     cin >> n >> m;
+    adj.resize(2 * MAXN + 5);
+    parent_node.resize(2 * MAXN + 5);
+    parent_idx.resize(2*MAXN + 5);
+    pii source, sink;
     vector<string> graph(n);
-    int total_seats = 0;
-
-    for (int i = 0; i < n; ++i) {
-        cin >> graph[i];
-        for(char c : graph[i]) if(c == '.') total_seats++;
-    }
-
-    int offset = n * m;
-    int source = 2 * n * m;
-    int sink = 2 * n * m + 1;
-
-    adj.clear(); 
-    adj.resize(sink + 5);
-    parent_node.resize(sink + 5);
-    parent_idx.resize(sink + 5);
-
+    for (int i = 0; i < n; ++i) cin >> graph[i];
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < m; ++j) {
-            if (graph[i][j] == 'x') continue;
-
-            int u_in = get_in(i, j);
-            int u_out = u_in + offset;
-
-            add_edge(u_in, u_out, 1);
-
-            if (j % 2 == 0) {
-                add_edge(source, u_in, 1); 
-
-                for (int k = 0; k < 6; ++k) {
-                    int ni = i + dr[k];
-                    int nj = j + dc[k];
-
-                    if (ni < 0 || ni >= n || nj < 0 || nj >= m) continue;
-                    if (graph[ni][nj] == 'x') continue;
-
-                    int v_in = get_in(ni, nj);
-                    add_edge(u_out, v_in, 1e9); 
+            char c = graph[i][j];
+            if (c == '#') continue;
+            if (c == '.') add_edge(get_in(i, j), get_out(i, j), 1);
+            else if (c == 'K') {add_edge(get_in(i, j), get_out(i, j), (1<<30)); source = {i, j};}
+            else if (c == 'H') {add_edge(get_in(i, j), get_out(i, j), (1<<30)); sink = {i, j};}
+            for (int k = 0; k < 4; ++k) {
+                int nr = i + dr[k];
+                int nc = j + dc[k];
+                if (nr < 0 || nr >= n || nc < 0 || nc >= m) continue;
+                if (graph[nr][nc] != '#') {
+                    add_edge(get_out(i, j), get_in(nr, nc), (1 << 30));
                 }
-            }
-            else {
-                add_edge(u_out, sink, 1);
             }
         }
     }
+    if (abs(source.first - sink.first) + abs(source.second - sink.second) == 1) {
+        cout << -1 << endl;
+        return;
+    }
 
-    // 정답 = 전체 자리 - 매칭된 수(컨닝 때문에 못 앉는 수)
-    cout << total_seats - mcmf(source, sink) << endl;
+    cout << max_flow(get_in(source.first, source.second), get_out(sink.first, sink.second)) << endl;
 }
 
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
 
-    int tc; cin >> tc;
-    while(tc--)
-        solve();
+    //int tc; cin >> tc;
+    //while(tc--)
+    solve();
 
     return 0;
 }

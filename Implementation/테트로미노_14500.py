@@ -21,37 +21,51 @@ tets = [
 
 def solve():
     n, m = mi()
-    grid = [[-(1 << 30)] * (max(n, m)) for _ in range(max(n, m))]
+    grid = [[0] * m for _ in range(n)]
     for i in range(n):
         t = li()
         for j in range(len(t)):
             grid[i][j] = t[j]
         
     
-    def rotate():
+    def rotate(grid):
+        n = len(grid)
+        m = len(grid[0])
+        ret = [[0] * n for _ in range(m)]
+        for i in range(n):
+            for j in range(m):
+                ret[j][n - 1 - i] = grid[i][j]
+        return ret
+
+    def flip(grid):
+        n = len(grid)
+        m = len(grid[0])
         ret = [[0] * m for _ in range(n)]
         for i in range(n):
             for j in range(m):
-                ret[j][n-1-i] = grid[i][j]
+                ret[i][m - 1 - j] = grid[i][j]
         return ret
-    if (n < m): n = m
-    else: m = n
+
     ans = 0
-    for r in range(4):
-        for i in range(n):
-            for j in range(m):
-                
-                out_of_range = False
-                for tet in tets:
-                    t = 0
-                    for r, c in tet:
-                        if (i + r < 0 or i + r >= n or j + c < 0 or j + c >= m): 
-                            out_of_range = True
+    for _ in range(4):
+        for cur_grid in (grid, flip(grid)):
+            cur_n = len(cur_grid)
+            cur_m = len(cur_grid[0])
+            for i in range(cur_n):
+                for j in range(cur_m):
+                    for tet in tets:
+                        out_of_range = False
+                        t = 0
+                        for r, c in tet:
+                            nr, nc = i + r, j + c
+                            if nr < 0 or nr >= cur_n or nc < 0 or nc >= cur_m:
+                                out_of_range = True
+                                break
+                            t += cur_grid[nr][nc]
+                        if out_of_range:
                             continue
-                        t += grid[i+r][j+c]
-                    if (out_of_range): continue
-                    ans = max(ans, t)
-        grid = rotate()
+                        ans = max(ans, t)
+        grid = rotate(grid)
 
     print(ans)
 
